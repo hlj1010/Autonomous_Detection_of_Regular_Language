@@ -68,7 +68,7 @@ dfa_5 = DFA(
     input_symbols={'0', '1'},
     transitions={
         'q0': {'1': 'q0', '0': 'q1'},
-        'q1': {'1': 'q2', '0': 'q4'},
+        'q1': {'1': 'q2', '0': 'q1'},      # NEED TO UPDATE THIS in the drawing
         'q2': {'0': 'q1', '1': 'q3'},
         'q3': {'0': 'q1', '1': 'q0'},
         'q4': {'0': 'q4', '1': 'q4'}
@@ -82,7 +82,7 @@ dfa_6 = DFA(
     input_symbols={'0', '1'},
     transitions={
         'q0': {'1': 'q0', '0': 'q1'},
-        'q1': {'1': 'q2', '0': 'q4'},
+        'q1': {'1': 'q2', '0': 'q1'},       # NEED TO UPDATE THIS in the drawing
         'q2': {'0': 'q1', '1': 'q3'},
         'q3': {'0': 'q1', '1': 'q0'},
         'q4': {'0': 'q4', '1': 'q4'}
@@ -92,19 +92,33 @@ dfa_6 = DFA(
 )
 
 
-def generate_string(length, dfa):
+def generate_string(length, dfa, final_results):
     retval = ''
     current_state = dfa.initial_state
 
-    for i in range(length):
-        transition = str(randrange(0, len(dfa.transitions[current_state])))
-        current_state = dfa.transitions[current_state][transition]
-        retval += transition
+    # for i in range(length):
+    #     transition = str(randrange(0, len(dfa.transitions[current_state])))
+    #     current_state = dfa.transitions[current_state][transition]
+    #     retval += transition
 
-    while current_state not in dfa.final_states:
-        transition = str(randrange(0, len(dfa.transitions[current_state])))
-        current_state = dfa.transitions[current_state][transition]
-        retval += transition
+    retry = True
+    while retry is True:
+        retry = False
+        while ((len(retval) < length) or (current_state not in dfa.final_states)) and (retval not in final_results):
+            transition = str(randrange(0, len(dfa.transitions[current_state])))
+            current_state = dfa.transitions[current_state][transition]
+            retval += transition
+            # print(retval)
+
+            if (len(retval) > (length * 3)):
+                print("ESCAPING")
+                break
+
+        try:
+            dfa.validate_input(retval)
+        except RejectionError as e:
+            retry = True
+            print("REJECTED: {}".format(e))
 
     return retval
 
@@ -112,16 +126,21 @@ def generate_string(length, dfa):
 if __name__ == "__main__":
     # s = r_generate_string(500, dfa.initial_state)
 
-    interim_results = []
     final_results = []
     dfas = [dfa_0, dfa_1, dfa_2, dfa_3, dfa_4, dfa_5, dfa_6]
-    trials = 1000
+    num_trials = 2
+    minimum_string_length = 5
 
     for i in range(len(dfas)):
-        while len(interim_results) < trials:
-            s = generate_string(trials, dfas[i])
+        interim_results = []
+        while len(interim_results) < num_trials:
+            s = generate_string(minimum_string_length, dfas[i], final_results)
+
             if s not in interim_results:
-                interim_results.append(s)
+                print(s, interim_results)
+                if s not in final_results:
+                    print(s, final_results)
+                    interim_results.append(s)
 
         print(len(interim_results))
         for ir in interim_results:
@@ -138,11 +157,16 @@ if __name__ == "__main__":
                 match_count += 1
 
         except RejectionError as e:
+            # print("Rejection ERROR!: {}".format(e))
             pass
 
         if match_count > 1:
             print("error")
 
-    with open('trial_data.csv', 'w') as f:
+    print("**********************\nHERE")
+
+    with open('trial_data_test.csv', 'w') as f:
         for fr in final_results:
-            f.write('{}, {}\n'.format(fr[0], fr[1]))
+
+            print('{},{}\n'.format(fr[0], fr[1]))
+            f.write('{},{}\n'.format(fr[0], fr[1]))
