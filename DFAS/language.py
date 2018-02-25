@@ -128,8 +128,8 @@ if __name__ == "__main__":
 
     final_results = []
     dfas = [dfa_0, dfa_1, dfa_2, dfa_3, dfa_4, dfa_5, dfa_6]
-    num_trials = 2
-    minimum_string_length = 5
+    num_trials = 1000
+    minimum_string_length = 1000
 
     for i in range(len(dfas)):
         interim_results = []
@@ -137,12 +137,13 @@ if __name__ == "__main__":
             s = generate_string(minimum_string_length, dfas[i], final_results)
 
             if s not in interim_results:
-                print(s, interim_results)
+                # print(s, interim_results)
                 if s not in final_results:
-                    print(s, final_results)
+                    # print(s, final_results)
                     interim_results.append(s)
+                    print('{}: {}'.format(i, len(interim_results)))
 
-        print(len(interim_results))
+        # print(len(interim_results))
         for ir in interim_results:
             final_results.append(('dfa_{}'.format(i), ir))
 
@@ -163,9 +164,7 @@ if __name__ == "__main__":
         if match_count > 1:
             print("error")
 
-    print("**********************\nHERE")
-
-    with open('trial_data_test.csv', 'w') as f:
+    with open('trial_data.csv', 'w') as f:
         for fr in final_results:
 
             print('{},{}\n'.format(fr[0], fr[1]))
