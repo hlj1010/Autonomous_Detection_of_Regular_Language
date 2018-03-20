@@ -62,6 +62,51 @@ def load_train_data(y_name="input_string", dfa=None):
     # return (train_x, train_y)
 
 
+def load_train_data2(base_filename="C:\\Users\\joels\\Documents\\GitHub\\Autonomous_Detection_of_Regular_Language\\DFAS\\redo\\dfa", qty=100):
+    import struct
+
+    data_x = []
+    data_y = []
+
+    for i in range(7):
+        with open('{}_{}.bin'.format(base_filename, i), 'rb') as fd:
+            for _ in range(qty):
+                b = fd.read(4)
+
+                if len(b) == 4:
+                    data_x.append('dfa_{}'.format(i))
+                    data_y.append(struct.unpack('L', b)[0])
+                else:
+                    break
+
+            fd.close()
+
+    return (data_x, data_y)
+
+
+def load_test_data2(base_filename="C:\\Users\\joels\\Documents\\GitHub\\Autonomous_Detection_of_Regular_Language\\DFAS\\redo\\dfa", qty=100, skip_first=100):
+    import struct
+
+    data_x = []
+    data_y = []
+
+    for i in range(7):
+        with open('{}_{}.bin'.format(base_filename, i), 'rb') as fd:
+            fd.seek(4 * skip_first, 0)
+            for _ in range(qty):
+                b = fd.read(4)
+
+                if len(b) == 4:
+                    data_x.append('dfa_{}'.format(i))
+                    data_y.append(struct.unpack('L', b)[0])
+                else:
+                    break
+
+            fd.close()
+
+    return (data_x, data_y)
+
+
 def load_test_data(y_name="input_string", dfa=None):
     return load_data("test_data.csv", y_name=y_name, dfa=dfa)
 
@@ -80,6 +125,15 @@ def train_input_fn(features, labels, batch_size):
 
     # Return the dataset.
     return dataset
+
+
+def chunk_data2(data):
+    r = '{:032b}'.format(data)
+    r = [[r[0]], [r[1]], [r[2]], [r[3]], [r[4]], [r[5]], [r[6]], [r[7]],
+         [r[8]], [r[9]], [r[10]], [r[11]], [r[12]], [r[13]], [r[14]], [r[15]],
+         [r[16]], [r[17]], [r[18]], [r[19]], [r[20]], [r[21]], [r[22]], [r[23]],
+         [r[24]], [r[25]], [r[26]], [r[27]], [r[28]], [r[29]], [r[30]], [r[31]]]
+    return r
 
 
 def chunk_data(data):
