@@ -6,8 +6,29 @@ import random
 from random import shuffle
 import tensorflow as tf
 import utils
+import time
 
 import os
+
+
+def shuffle_data(input_data, output_data):
+    train_input = []
+    zipped = []
+
+    for i in range(len(input_data)):
+        zipped.append((utils.chunk_data2(input_data[i]), output_data[i]))
+
+    shuffle(zipped)
+
+    train_input.clear()
+    output_data = []
+    for i in range(len(zipped)):
+        train_input.append(zipped[i][0])
+        train_output.append(zipped[i][1])
+
+    return train_input, train_output
+
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
 
@@ -17,14 +38,15 @@ os.chdir(dir_path)
 
 NUM_EXAMPLES = 10000
 
-NUM_TRAIN_PER_DFA_BIN = 100
+NUM_TRAIN_PER_DFA_BIN = 1000
 NUM_TEST_PER_DFA_BIN = 1000
 
 (train_x, train_y) = utils.load_train_data2(qty=NUM_TRAIN_PER_DFA_BIN)
 NUM_TRAIN = len(train_x)
 
 
-(test_x, test_y) = utils.load_test_data2(qty=NUM_TEST_PER_DFA_BIN, skip_first=NUM_TRAIN_PER_DFA_BIN)
+(test_x, test_y) = utils.load_test_data2(
+    qty=NUM_TEST_PER_DFA_BIN, skip_first=NUM_TRAIN_PER_DFA_BIN)
 NUM_TEST = len(test_x)
 
 
@@ -70,7 +92,7 @@ target = tf.placeholder(dtype=tf.float32, shape=[None, 1])
 
 
 # num_units / num_hidden
-num_hidden = 24
+num_hidden = 33
 
 # state_is_tuple : If True, accepted and returned states are 2-tuples of the
 # c_state and m_state. If False, they are concatenated along the column axis.
@@ -110,15 +132,16 @@ output, state = tf.nn.dynamic_rnn(cell=cell, inputs=data, dtype=tf.float32)
 # gather we get A[L]
 
 # Transposes a. Permutes the dimensions according to perm.
+print(output.get_shape())
 output = tf.transpose(a=output, perm=[1, 0, 2])
-
+print(output.get_shape())
 
 ###################################################################
 # SKIPPING FOR NOW.  NEED TO COME BACK TO THIS STEP IN ORDER TO
 # UNDERSTAND WHAT IT DOES AND IF IT'S NEEDED
 last = tf.gather(params=output, indices=(int(output.get_shape()[0]) - 1))
+print(output.get_shape())
 # print(last)
-# print(output.get_shape())
 # exit()
 
 weight = tf.Variable(tf.truncated_normal(
@@ -136,59 +159,140 @@ mistakes = tf.not_equal(tf.argmax(target, 1), tf.argmax(prediction, 1))
 error = tf.reduce_mean(tf.cast(mistakes, tf.float32))
 
 
-init_op = tf.initialize_all_variables()
-sess = tf.Session()
-sess.run(fetches=init_op)
+init_op = tf.global_variables_initializer()
 
-batch_size = 100
-no_of_batches = int(len(train_y) // batch_size)
-epoch = 10
+# Configure GPU settings
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
 
-print('Batch Size: {}'.format(batch_size))
-print('# of Batches: {}'.format(no_of_batches))
-print('Epoch: {}'.format(epoch))
-print('========================================')
+saver = tf.train.Saver()
 
-# overall_count = 0
-for i in range(epoch):
-    ptr = 0
-    for j in range(no_of_batches):
-     
-        train_input = []
-        for k in range(ptr, ptr + batch_size):
-         
-            # print('train_y[k]: {}'.format(train_y[k]))
-            # print('type(train_y[k]): {}'.format(type(train_y[k])))
-            train_input.append(utils.chunk_data2(train_y[k]))
-            # print(train_input[0])
+with tf.Session() as sess:
+    sess.run(init_op)
+    config = config
+    save_path = saver.save(sess, "./model_data/model.ckpt")
+    print("Model saved in path: %s" % save_path)
 
-        inp = train_input
-        out = train_output[ptr:ptr + batch_size]
+    # sess.run(fetches=init_op)
 
-        # print('inp: {}'.format(inp))
-        # print('out: {}'.format(out))
+    batch_size = (len(train_y)) // 1
+    no_of_batches = int(len(train_y) // batch_size)
+    epoch = 500
 
-        # exit()
-        ptr += batch_size
+    print('Batch Size: {}'.format(batch_size))
+    print('# of Batches: {}'.format(no_of_batches))
+    print('Epoch: {}'.format(epoch))
+    print('========================================')
 
-        sess.run(fetches=minimize, feed_dict={data: inp, target: out})
-        # sess.run(fetches=minimize, feed_dict={data: inp, target: out})
-    print("Epoch ", str(i))
+    # preload all training data into memory in order to speed things up
 
 
-test_input = []
-for k in range(0, NUM_TEST):
-    test_input.append(utils.chunk_data2(test_y[k]))
+    train_input, train_output = shuffle_data(train_y, train_output)
+    test_input, train_output = shuffle_data(test_y, test_output)
 
-# print('test_input: {}'.format(test_input))
-# print('len(test_input): {}'.format(len(test_input)))
-# print('test_output: {}'.format(test_output))
-# print('len(test_output): {}'.format(len(test_output)))
+    # train_input = []
+    # zipped = []
 
-incorrect = sess.run(error, feed_dict={data: test_input, target: test_output})
-print('type(incorrect): {}'.format(type(incorrect)))
-print('incorrect: {}'.format(incorrect))
-print(sess.run(prediction, {data: test_input[1500:1505]}))
-print(test_output[1500:1505])
-print('Epoch {:2d} error {:3.1f}%'.format(i + 1, 100 * incorrect))
-sess.close()
+    # for i in range(len(train_y)):
+    #     zipped.append((utils.chunk_data2(train_y[i]), train_output[i]))
+
+    # shuffle(zipped)
+
+    # train_input = []
+    # train_output = []
+    # for i in range(len(zipped)):
+    #     train_input.append(zipped[i][0])
+    #     train_output.append(zipped[i][1])
+
+
+
+
+
+
+
+
+
+
+
+
+    # dataset = tf.data.Dataset.zip((train_input, train_output))
+    # dataset = dataset.batch(32)
+    # iterator = dataset.make_one_shot_iterator()
+    # next_element = iterator.get_next()
+
+    # for _ in range(100):
+    #     sess.run(iterator.initializer)
+    #     while True:
+    #         try:
+    #             start_time = time.time()
+    #             sess.run(next_element)
+    #         except tf.errors.OutOfRangeError:
+    #             break
+
+    #         print("Epoch {}: Elapsed Time: {}".format(i, time.time() - start_time))
+
+    # session.run(next_element)
+    # inp, out = tf.train.shuffle_batch(
+    #       [train_input, train_output],
+    #       batch_size=32,
+    #       num_threads=4,
+    #       capacity=50000,
+    #       min_after_dequeue=10000)
+
+    # overall_count = 0
+    start_time = time.time()
+    for i in range(epoch):
+        ptr = 0
+        for j in range(no_of_batches):
+
+            # for k in range(ptr, ptr + batch_size):
+
+            #     # print('train_y[k]: {}'.format(train_y[k]))
+            #     # print('type(train_y[k]): {}'.format(type(train_y[k])))
+            #     train_input.append(utils.chunk_data2(train_y[k]))
+            #     # print(train_input[0])
+
+            inp = train_input[ptr:ptr + batch_size]
+            out = train_output[ptr:ptr + batch_size]
+
+            # print('inp: {}'.format(inp))
+            # print('out: {}'.format(out))
+
+            # exit()
+            ptr += batch_size
+
+            sess.run(fetches=minimize, feed_dict={data: inp, target: out})
+            # sess.run(fetches=minimize, feed_dict={data: inp, target: out})
+
+    # inp = train_input
+    # out = train_output
+
+    # for i in range(epoch):
+    #     sess.run(fetches=minimize, feed_dict={data: inp, target: out})
+    #     print("Epoch {}: Elapsed Time: {}".format(i, time.time() - start_time))
+    #     start_time = time.time()
+
+        print("Epoch {}: Elapsed Time: {}".format(i, time.time() - start_time))
+        # print('cell.input_shape: {}'.format(cell.input_shape))
+        # print('cell.trainable_variables: {}'.format(cell.trainable_variables))
+        # print('cell.trainable_weights: {}'.format(cell.trainable_weights))
+        # print('cell.weights: {}'.format(cell.weights))
+        start_time = time.time()
+
+    test_input = []
+    for k in range(0, NUM_TEST):
+        test_input.append(utils.chunk_data2(test_y[k]))
+
+    # print('test_input: {}'.format(test_input))
+    # print('len(test_input): {}'.format(len(test_input)))
+    # print('test_output: {}'.format(test_output))
+    # print('len(test_output): {}'.format(len(test_output)))
+
+    incorrect = sess.run(
+        error, feed_dict={data: test_input, target: test_output})
+    print('type(incorrect): {}'.format(type(incorrect)))
+    print('incorrect: {}'.format(incorrect))
+    print(sess.run(prediction, {data: test_input[1500:1505]}))
+    print(test_output[1500:1505])
+    print('Epoch {:2d} error {:3.1f}%'.format(i + 1, 100 * incorrect))
+    sess.close()
