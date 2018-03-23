@@ -11,6 +11,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.layers import Embedding
 from keras.layers import LSTM
+from keras.layers import CuDNNLSTM
 from keras.layers import Activation
 from keras import optimizers
 
@@ -102,7 +103,8 @@ print("Testing and training data loaded")
 
 model = Sequential()
 # model.add(Embedding(2, output_dim=5, input_shape=(3000, 32, 1)))
-model.add(LSTM(1, input_shape=(32, 1), activation='hard_sigmoid', unit_forget_bias=True))
+# model.add(LSTM(1, input_shape=(32, 1), activation='hard_sigmoid', unit_forget_bias=True))
+model.add(CuDNNLSTM(1, input_shape=(32, 1), unit_forget_bias=True))
 # model.add(LSTM(1, input_shape=(32, 1), activation='tanh', unit_forget_bias=True))
 model.add(Activation('tanh'))
 # model.add(Activation('softmax'))
