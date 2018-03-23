@@ -47,7 +47,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
 
 NUM_TRAIN_PER_DFA_BIN = 10000
-NUM_TEST_PER_DFA_BIN = 1000
+NUM_TEST_PER_DFA_BIN = 10000
 DATA_WIDTH = 32
 TARGET_DFA = 'dfa_0'
 MAX_BATCH_SIZE = 3000
@@ -103,6 +103,7 @@ print("Testing and training data loaded")
 model = Sequential()
 # model.add(Embedding(2, output_dim=5, input_shape=(3000, 32, 1)))
 model.add(LSTM(1, input_shape=(32, 1), activation='hard_sigmoid', unit_forget_bias=True))
+# model.add(LSTM(1, input_shape=(32, 1), activation='tanh', unit_forget_bias=True))
 model.add(Activation('tanh'))
 # model.add(Activation('softmax'))
 # model.add(Dropout(0.5))
