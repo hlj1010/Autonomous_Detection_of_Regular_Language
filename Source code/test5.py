@@ -103,7 +103,7 @@ print("Testing and training data loaded")
 
 
 if RELOAD_MODEL is True:
-    model = load_model('C:/Users/joels/Documents/GitHub/Autonomous_Detection_of_Regular_Language/Source code/model_data/model.h5')
+    model = load_model('./model_data/model.h5')
 
 else:
 
@@ -119,7 +119,7 @@ else:
     # model.add(Dropout(0.5))
     # model.add(Dense(1, activation='sigmoid'))
 
-    rmsprop = optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=None, decay=0.0)
+    # rmsprop = optimizers.RMSprop(lr=0.001, rho=0.9, epsilon=None, decay=0.0)
 
 
     model.compile(loss='binary_crossentropy',
@@ -132,12 +132,12 @@ print(len(train_output))
 
 
 try:
-    # model.fit(train_input, train_output, batch_size=MAX_BATCH_SIZE, epochs=EPOCHS)
+    model.fit(train_input, train_output, batch_size=MAX_BATCH_SIZE, epochs=EPOCHS)
     pass
 except KeyboardInterrupt as e:
     pass
 finally:
     if RELOAD_MODEL is False:
-        model.save('C:/Users/joels/Documents/GitHub/Autonomous_Detection_of_Regular_Language/Source code/model_data/model.h5')
+        model.save('./model_data/model.h5')
     score = model.evaluate(test_input, test_output, batch_size=MAX_BATCH_SIZE)
     print(score)
